@@ -2,13 +2,16 @@
 
 import Link from "next/link";
 import { useMemo } from "react";
+import { useParams } from "next/navigation";
 
-export default function ResultsPage({ params }: { params: { code: string } }) {
+export default function ResultsPage() {
+	const params = useParams<{ code: string }>();
+	const code = (params?.code || "").toUpperCase();
 	const summary = useMemo(() => {
 		if (typeof window === "undefined") return null;
-		const raw = localStorage.getItem(`hyk_session_${params.code.toUpperCase()}`);
+		const raw = localStorage.getItem(`hyk_session_${code}`);
 		return raw ? JSON.parse(raw) : null;
-	}, [params.code]);
+	}, [code]);
 
 	return (
 		<section className="space-y-6 rounded-3xl border border-primary/30 bg-card/90 p-8">
@@ -20,7 +23,7 @@ export default function ResultsPage({ params }: { params: { code: string } }) {
 				<Stat label="Correct" value={summary?.correctCount ?? 0} />
 			</div>
 			<div className="flex flex-wrap gap-3">
-				<Link className="rounded-xl bg-primary px-4 py-2 font-bold text-bg" href={`/leaderboard/${params.code.toUpperCase()}`}>
+				<Link className="rounded-xl bg-primary px-4 py-2 font-bold text-bg" href={`/leaderboard/${code}`}>
 					View Leaderboard
 				</Link>
 				<Link className="rounded-xl border border-primary px-4 py-2 font-bold text-primary" href="/join">

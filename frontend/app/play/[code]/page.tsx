@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { fetchLeaderboard, fetchQuiz, submitScore } from "../../../lib/api";
 import { bonusPerfectQuiz, calculateLevel, calculateScore, calculateXp, isPerfectQuiz, resolveAchievements } from "../../../lib/game";
@@ -40,11 +40,12 @@ const initialState: SessionState = {
 	correctCount: 0
 };
 
-export default function PlayPage({ params }: { params: { code: string } }) {
+export default function PlayPage() {
+	const params = useParams<{ code: string }>();
 	const router = useRouter();
 	const search = useSearchParams();
 	const playerName = search.get("player") || (typeof window !== "undefined" ? localStorage.getItem("hyk_player_name") || "Player" : "Player");
-	const code = params.code.toUpperCase();
+	const code = (params?.code || "").toUpperCase();
 	const sessionKey = `hyk_session_${code}`;
 	const audio = useAudioManager();
 
