@@ -1,11 +1,11 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -Wpedantic -std=c11 -I./include -I./third_party
+CFLAGS = -Wall -Wextra -Wpedantic -std=c11 -D_POSIX_C_SOURCE=200809L -D_DEFAULT_SOURCE -I./include -I./third_party
 LDFLAGS = -lsqlite3 -lcurl -lm
 
 SRC = \
 	main.c \
 	api/server.c \
-	services/openai_service.c \
+	services/gemini_service.c \
 	services/quiz_service.c \
 	services/score_service.c \
 	database/db.c \
@@ -49,7 +49,7 @@ run: all
 	./$(TARGET)
 
 test: deps
-	$(CC) $(CFLAGS) -o $(TEST_TARGET) $(TEST_SRC) services/quiz_service.c services/openai_service.c database/db.c utils/logger.c utils/json_utils.c third_party/cJSON.c $(LDFLAGS)
+	$(CC) $(CFLAGS) -o $(TEST_TARGET) $(TEST_SRC) services/quiz_service.c services/gemini_service.c database/db.c utils/logger.c utils/json_utils.c third_party/cJSON.c $(LDFLAGS)
 	./$(TEST_TARGET)
 
 coverage:

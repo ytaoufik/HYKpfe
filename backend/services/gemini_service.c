@@ -2,29 +2,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include <ctype.h>
 
 #include "cJSON.h"
 #include "utils.h"
-
-static const char *strcasestr(const char *haystack, const char *needle) {
-	if (!haystack || !needle) return NULL;
-	int h_len = strlen(haystack);
-	int n_len = strlen(needle);
-	if (n_len == 0) return haystack;
-	
-	for (int i = 0; i <= h_len - n_len; i++) {
-		int match = 1;
-		for (int j = 0; j < n_len; j++) {
-			if (tolower(haystack[i + j]) != tolower(needle[j])) {
-				match = 0;
-				break;
-			}
-		}
-		if (match) return &haystack[i];
-	}
-	return NULL;
-}
 
 static char *generate_intelligent_mock_quiz(const char *input_text) {
 	cJSON *root, *questions, *q, *options;
