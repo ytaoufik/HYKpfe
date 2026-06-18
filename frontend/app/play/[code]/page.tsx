@@ -167,7 +167,12 @@ export default function PlayPage() {
 		const ach = resolveAchievements({
 			streak: partial.streak,
 			level: partial.level,
-			perfect: false
+			perfect: false,
+			correctCount: partial.correctCount,
+			lives: partial.lives,
+			totalLives: initialState.lives,
+			totalQuestions: questions.length,
+			answerTimeSeconds: QUESTION_TIME - remaining
 		});
 		if (ach.length > 0) {
 			setAchievement(ach[0]);

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 
-const navLinks = [
+const navLinks: Array<{ href: string; label: string }> = [
 	{ href: "/", label: "Home" },
 	{ href: "/teacher", label: "Create Quiz" },
 	{ href: "/join", label: "Join Game" }
@@ -35,7 +35,7 @@ export function Navbar() {
 						return (
 							<Link
 								key={link.href}
-								href={link.href}
+								href={{ pathname: link.href }}
 								className={`relative rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 hover:text-primary ${
 									isActive ? "text-primary" : "text-text/60 hover:text-text/90"
 								}`}
