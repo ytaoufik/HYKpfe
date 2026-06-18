@@ -1,26 +1,39 @@
-FROM ubuntu:24.04 AS build
-WORKDIR /app
+FROM gcc:13 AS builder
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-	build-essential \
-	ca-certificates \
-	curl \
-	libsqlite3-dev \
-	libcurl4-openssl-dev && rm -rf /var/lib/apt/lists/*
+WORKDIR /build
+
+RUN apt-get update && apt-get install -y \
+    libsqlite3-dev \
+    libcurl4-openssl-dev \
+    && rm -rf /var/lib/apt/lists/*
 
 COPY . .
+
 RUN make all
 
-FROM ubuntu:24.04 AS runtime
-WORKDIR /app
-RUN apt-get update && apt-get install -y --no-install-recommends \
-	libsqlite3-0 \
-	libcurl4 \
-	ca-certificates && rm -rf /var/lib/apt/lists/*
+FROM debian:bookworm-slim
 
-COPY --from=build /app/hyk_backend ./hyk_backend
-COPY --from=build /app/schema.sql ./schema.sql
-COPY --from=build /app/seed.sql ./seed.sql
+RUN apt-get update && apt-get install -y \
+    libsqlite3-0 \
+    libcurl4 \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY --from=builder /build/hyk_backend .
+COPY --from=builder /build/schema.sql .
+COPY --from=builder /build/seed.sql .
+COPY --from=builder /build/migrations/ ./migrations/
+
+RUN mkdir -p /data
+
 ENV PORT=8080
+ENV SQLITE_DB_PATH=/data/hyk.db
+
 EXPOSE 8080
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD curl -f http://localhost:8080/health || exit 1
+
 CMD ["./hyk_backend"]

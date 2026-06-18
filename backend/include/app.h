@@ -9,5 +9,6 @@ typedef struct AppContext {
 
 int app_load_config(AppContext *ctx);
 int app_start_server(AppContext *ctx);
+AppContext *app_get_context(void);
 
 #endif

@@ -18,7 +18,7 @@ static const char *valid_quiz =
 	"{\"question\":\"Q10\",\"options\":[\"a\",\"b\",\"c\",\"d\"],\"correct_answer\":0,\"explanation\":\"e\"}"
 	"]}";
 
-int main(void) {
+void test_quiz_run(void) {
 	char error[128] = {0};
 	int ok = quiz_validate_payload(valid_quiz, error, sizeof(error));
 	assert(ok == 1);
@@ -28,5 +28,4 @@ int main(void) {
 	assert(ok == 0);
 
 	printf("test_quiz: OK\n");
-	return 0;
 }

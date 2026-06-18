@@ -127,9 +127,9 @@ char *stats_fetch_json(void) {
 	sqlite3_finalize(stmt);
 
 	cJSON_AddBoolToObject(root, "ok", 1);
-	cJSON_AddNumberToObject(root, "quizzes", total_quizzes);
-	cJSON_AddNumberToObject(root, "players", total_players);
-	cJSON_AddNumberToObject(root, "scores", total_scores);
+	cJSON_AddNumberToObject(root, "total_games", total_quizzes);
+	cJSON_AddNumberToObject(root, "total_players", total_players);
+	cJSON_AddNumberToObject(root, "total_questions", total_quizzes * 10);
 	out = cJSON_PrintUnformatted(root);
 	cJSON_Delete(root);
 	return out;

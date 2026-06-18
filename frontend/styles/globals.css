@@ -1,20 +1,38 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
 	color-scheme: dark;
+	--color-bg: #0F0A12;
+	--color-card: #1C1223;
+	--color-primary: #E9A8C6;
+	--color-secondary: #FFB6D9;
+	--color-accent: #D27CA8;
+	--color-success: #A7F3D0;
+	--color-danger: #FB7185;
+	--color-text: #FFF4F7;
+	--color-warning: #FBBF24;
+	--glass-bg: rgba(28, 18, 35, 0.6);
+	--glass-border: rgba(233, 168, 198, 0.15);
+	--glass-blur: 16px;
 }
 
 * {
 	box-sizing: border-box;
 }
 
+html {
+	scroll-behavior: smooth;
+}
+
 html,
 body {
 	margin: 0;
 	padding: 0;
-	font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif;
+	font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
 	background:
 		radial-gradient(circle at 10% 20%, rgba(210, 124, 168, 0.16), transparent 35%),
 		radial-gradient(circle at 80% 0%, rgba(233, 168, 198, 0.2), transparent 30%),
@@ -25,4 +43,253 @@ body {
 a {
 	color: inherit;
 	text-decoration: none;
+}
+
+::selection {
+	background: rgba(233, 168, 198, 0.35);
+	color: #FFF4F7;
+}
+
+::-moz-selection {
+	background: rgba(233, 168, 198, 0.35);
+	color: #FFF4F7;
+}
+
+::-webkit-scrollbar {
+	width: 8px;
+	height: 8px;
+}
+
+::-webkit-scrollbar-track {
+	background: #0F0A12;
+}
+
+::-webkit-scrollbar-thumb {
+	background: rgba(233, 168, 198, 0.3);
+	border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+	background: rgba(233, 168, 198, 0.5);
+}
+
+@layer utilities {
+	.glass {
+		background: rgba(28, 18, 35, 0.6);
+		backdrop-filter: blur(16px);
+		-webkit-backdrop-filter: blur(16px);
+		border: 1px solid rgba(233, 168, 198, 0.15);
+	}
+}
+
+.score-float {
+	position: absolute;
+	pointer-events: none;
+	animation: scoreFloat 1.2s ease-out forwards;
+}
+
+@keyframes fadeInUp {
+	0% {
+		opacity: 0;
+		transform: translateY(24px);
+	}
+	100% {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@keyframes scoreFloat {
+	0% {
+		opacity: 1;
+		transform: translateY(0) scale(1);
+	}
+	50% {
+		opacity: 1;
+		transform: translateY(-30px) scale(1.2);
+	}
+	100% {
+		opacity: 0;
+		transform: translateY(-60px) scale(1);
+	}
+}
+
+@keyframes countdownRing {
+	from {
+		stroke-dashoffset: 0;
+	}
+	to {
+		stroke-dashoffset: 283;
+	}
+}
+
+@keyframes pulseGlow {
+	0%, 100% {
+		box-shadow: 0 0 8px rgba(233, 168, 198, 0.2);
+	}
+	50% {
+		box-shadow: 0 0 24px rgba(233, 168, 198, 0.5);
+	}
+}
+
+@keyframes shimmer {
+	0% {
+		background-position: -200% center;
+	}
+	100% {
+		background-position: 200% center;
+	}
+}
+
+@keyframes slideInRight {
+	0% {
+		opacity: 0;
+		transform: translateX(80px);
+	}
+	100% {
+		opacity: 1;
+		transform: translateX(0);
+	}
+}
+
+@keyframes bounceIn {
+	0% {
+		opacity: 0;
+		transform: scale(0.3);
+	}
+	50% {
+		opacity: 1;
+		transform: scale(1.08);
+	}
+	70% {
+		transform: scale(0.95);
+	}
+	100% {
+		transform: scale(1);
+	}
+}
+
+@keyframes heartbeat {
+	0%, 100% {
+		transform: scale(1);
+	}
+	14% {
+		transform: scale(1.25);
+	}
+	28% {
+		transform: scale(1);
+	}
+	42% {
+		transform: scale(1.15);
+	}
+	70% {
+		transform: scale(1);
+	}
+}
+
+@keyframes breakHeart {
+	0% {
+		transform: scale(1) rotate(0deg);
+		opacity: 1;
+	}
+	30% {
+		transform: scale(1.2) rotate(-5deg);
+	}
+	60% {
+		transform: scale(0.6) rotate(10deg);
+		opacity: 0.5;
+	}
+	100% {
+		transform: scale(0) rotate(20deg);
+		opacity: 0;
+	}
+}
+
+@keyframes levelUp {
+	0% {
+		transform: scale(1);
+		text-shadow: 0 0 0px transparent;
+	}
+	30% {
+		transform: scale(1.3);
+		text-shadow: 0 0 20px rgba(167, 243, 208, 0.8);
+	}
+	60% {
+		transform: scale(0.95);
+	}
+	100% {
+		transform: scale(1);
+		text-shadow: 0 0 0px transparent;
+	}
+}
+
+@keyframes gradientShift {
+	0% {
+		background-position: 0% 50%;
+	}
+	50% {
+		background-position: 100% 50%;
+	}
+	100% {
+		background-position: 0% 50%;
+	}
+}
+
+@keyframes float {
+	0%, 100% {
+		transform: translateY(0px);
+	}
+	50% {
+		transform: translateY(-20px);
+	}
+}
+
+@keyframes floatSlow {
+	0%, 100% {
+		transform: translateY(0px) translateX(0px);
+	}
+	33% {
+		transform: translateY(-15px) translateX(8px);
+	}
+	66% {
+		transform: translateY(-8px) translateX(-5px);
+	}
+}
+
+@keyframes spin {
+	from {
+		transform: rotate(0deg);
+	}
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+@keyframes slideUp {
+	0% {
+		opacity: 0;
+		transform: translateY(40px);
+	}
+	100% {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@keyframes countdownBounce {
+	0% {
+		opacity: 0;
+		transform: scale(0.3);
+	}
+	50% {
+		opacity: 1;
+		transform: scale(1.15);
+	}
+	80% {
+		transform: scale(0.95);
+	}
+	100% {
+		opacity: 0;
+		transform: scale(0.8);
+	}
 }

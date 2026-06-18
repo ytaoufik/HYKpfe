@@ -1,90 +1,116 @@
+#include <curl/curl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
 
 #include "cJSON.h"
 #include "utils.h"
 
-static char *generate_intelligent_mock_quiz(const char *input_text) {
-	cJSON *root, *questions, *q, *options;
-	char *payload;
-	int i;
-	char title[256];
+typedef struct Buffer {
+	char *data;
+	size_t len;
+} Buffer;
 
-	/* Photosynthesis question templates */
-	const char *photo_questions[] = {
-		"What is the primary function of chlorophyll in photosynthesis?",
-		"Which organisms are capable of photosynthesis?",
-		"In which organelle does photosynthesis occur?",
-		"What is the role of light in the light-dependent reactions?",
-		"Which gas is consumed during photosynthesis?",
-		"What is the product created in the Calvin cycle?",
-		"How many water molecules are needed to produce one glucose?",
-		"Which wavelengths of light are most important for photosynthesis?",
-		"What is the relationship between photosynthesis and cellular respiration?",
-		"Where does the light-independent reaction (Calvin cycle) take place?"
-	};
+static size_t write_cb(void *contents, size_t size, size_t nmemb, void *userp) {
+	size_t realsize = size * nmemb;
+	Buffer *mem = (Buffer *) userp;
+	char *ptr = realloc(mem->data, mem->len + realsize + 1);
 
-	const char *photo_opts[][4] = {
-		{"To absorb light energy for photosynthesis", "To store glucose molecules", "To transport water", "To provide support"},
-		{"Plants and some algae/bacteria", "Only plants", "Animals and fungi", "Only bacteria"},
-		{"Chloroplast", "Mitochondrion", "Nucleus", "Vacuole"},
-		{"To energize electrons in the photosystem", "To break down glucose", "To transport CO2", "To create chlorophyll"},
-		{"Carbon dioxide (CO2)", "Oxygen (O2)", "Nitrogen (N2)", "Hydrogen (H2)"},
-		{"Glucose (C6H12O6)", "Carbon dioxide", "Water", "Oxygen"},
-		{"6 water molecules", "1 water molecule", "12 water molecules", "3 water molecules"},
-		{"Blue and red wavelengths", "Green wavelengths", "Infrared wavelengths", "Ultraviolet"},
-		{"They are complementary - photosynthesis stores energy, respiration releases it", "Same process", "No relationship", "Respiration is faster"},
-		{"In the stroma of the chloroplast", "In the thylakoid membrane", "In the outer membrane", "In the cristae"}
-	};
-
-	int photo_correct[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-
-	/* Extract title */
-	snprintf(title, sizeof(title), "%s", input_text);
-	if (strlen(title) > 50) {
-		title[50] = '\0';
-		char *space = strrchr(title, ' ');
-		if (space) *space = '\0';
+	if (!ptr) {
+		return 0;
 	}
+
+	mem->data = ptr;
+	memcpy(&(mem->data[mem->len]), contents, realsize);
+	mem->len += realsize;
+	mem->data[mem->len] = '\0';
+	return realsize;
+}
+
+static char *extract_content_json(const char *response) {
+	cJSON *root, *candidates, *first, *content, *parts, *first_part, *text;
+	char *raw_json = NULL;
+
+	root = cJSON_Parse(response);
+	if (!root) {
+		return NULL;
+	}
+
+	candidates = cJSON_GetObjectItem(root, "candidates");
+	if (!cJSON_IsArray(candidates) || cJSON_GetArraySize(candidates) == 0) {
+		cJSON_Delete(root);
+		return NULL;
+	}
+
+	first = cJSON_GetArrayItem(candidates, 0);
+	content = cJSON_GetObjectItem(first, "content");
+	parts = content ? cJSON_GetObjectItem(content, "parts") : NULL;
+	if (!cJSON_IsArray(parts) || cJSON_GetArraySize(parts) == 0) {
+		cJSON_Delete(root);
+		return NULL;
+	}
+
+	first_part = cJSON_GetArrayItem(parts, 0);
+	text = first_part ? cJSON_GetObjectItem(first_part, "text") : NULL;
+	if (cJSON_IsString(text) && text->valuestring) {
+		raw_json = strdup(text->valuestring);
+	}
+
+	cJSON_Delete(root);
+	return raw_json;
+}
+
+static char *extract_json_object(const char *text) {
+	const char *start = strchr(text, '{');
+	const char *end = strrchr(text, '}');
+	char *out;
+	int len;
+
+	if (!start || !end || end <= start) {
+		return NULL;
+	}
+
+	len = (int) (end - start + 1);
+	out = malloc((size_t) len + 1);
+	if (!out) {
+		return NULL;
+	}
+
+	memcpy(out, start, (size_t) len);
+	out[len] = '\0';
+	return out;
+}
+
+static char *build_gemini_payload(const char *input_text) {
+	cJSON *root, *contents, *parts, *part, *generation_config;
+	char prompt[8192];
+	char *payload;
+
+	snprintf(prompt, sizeof(prompt),
+			 "Create exactly 10 multiple-choice quiz questions from this lesson text. "
+			 "Return only valid JSON with this exact shape: "
+			 "{\"title\":\"...\",\"questions\":[{\"question\":\"...\",\"options\":[\"A\",\"B\",\"C\",\"D\"],\"correct_answer\":0,\"explanation\":\"...\"}]}. "
+			 "Use real educational questions that clearly test the lesson content. "
+			 "Lesson text: %s",
+			 input_text);
 
 	root = cJSON_CreateObject();
-	cJSON_AddStringToObject(root, "title", title);
+	contents = cJSON_AddArrayToObject(root, "contents");
+	parts = cJSON_CreateArray();
+	part = cJSON_CreateObject();
+	cJSON_AddStringToObject(part, "text", prompt);
+	cJSON_AddItemToArray(parts, part);
 
-	questions = cJSON_CreateArray();
-	cJSON_AddItemToObject(root, "questions", questions);
-
-	/* Use photosynthesis questions if keyword detected, else generate generic */
-	int use_photo = strcasestr(input_text, "photosynthesis") || strcasestr(input_text, "chlorophyll") || strcasestr(input_text, "light");
-
-	for (i = 0; i < 10; i++) {
-		q = cJSON_CreateObject();
-
-		if (use_photo && i < 10) {
-			cJSON_AddStringToObject(q, "question", photo_questions[i]);
-			options = cJSON_CreateArray();
-			for (int j = 0; j < 4; j++) {
-				cJSON_AddItemToArray(options, cJSON_CreateString(photo_opts[i][j]));
-			}
-			cJSON_AddNumberToObject(q, "correct_answer", photo_correct[i]);
-		} else {
-			char qtext[256];
-			snprintf(qtext, sizeof(qtext), "Question %d about %s?", i + 1, input_text);
-			cJSON_AddStringToObject(q, "question", qtext);
-
-			options = cJSON_CreateArray();
-			cJSON_AddItemToArray(options, cJSON_CreateString("Option A"));
-			cJSON_AddItemToArray(options, cJSON_CreateString("Option B"));
-			cJSON_AddItemToArray(options, cJSON_CreateString("Option C"));
-			cJSON_AddItemToArray(options, cJSON_CreateString("Option D"));
-			cJSON_AddNumberToObject(q, "correct_answer", 2);
-		}
-
-		cJSON_AddItemToObject(q, "options", options);
-		cJSON_AddStringToObject(q, "explanation", "This is the correct answer based on the lesson material.");
-		cJSON_AddItemToArray(questions, q);
+	{
+		cJSON *content = cJSON_CreateObject();
+		cJSON_AddItemToArray(contents, content);
+		cJSON_AddItemToObject(content, "parts", parts);
 	}
+
+	generation_config = cJSON_AddObjectToObject(root, "generationConfig");
+	cJSON_AddNumberToObject(generation_config, "temperature", 0.6);
+	cJSON_AddNumberToObject(generation_config, "maxOutputTokens", 2200);
+	cJSON_AddStringToObject(generation_config, "responseMimeType", "application/json");
 
 	payload = cJSON_PrintUnformatted(root);
 	cJSON_Delete(root);
@@ -92,7 +118,80 @@ static char *generate_intelligent_mock_quiz(const char *input_text) {
 }
 
 char *gemini_generate_quiz_json(const char *input_text, int retries) {
-	(void)retries;
-	log_info("Using intelligent mock quiz generator");
-	return generate_intelligent_mock_quiz(input_text);
+	const char *key = getenv("GEMINI_API_KEY");
+	const char *model = getenv("GEMINI_MODEL");
+	char url[1024];
+	char auth[512];
+	char *payload;
+	int attempt;
+
+	if (!model || model[0] == '\0') {
+		model = "gemini-1.5-flash";
+	}
+
+	if (!key || key[0] == '\0' || strcmp(key, "replace_with_your_real_gemini_key") == 0) {
+		log_error("GEMINI_API_KEY not configured");
+		return NULL;
+	}
+
+	if (retries < 0) {
+		retries = 0;
+	}
+
+	snprintf(url, sizeof(url),
+			 "https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent?key=%s",
+			 model, key);
+	snprintf(auth, sizeof(auth), "Content-Type: application/json");
+	payload = build_gemini_payload(input_text);
+	if (!payload) {
+		return NULL;
+	}
+
+	for (attempt = 0; attempt <= retries; attempt++) {
+		CURL *curl = curl_easy_init();
+		struct curl_slist *headers = NULL;
+		Buffer response = {0};
+		CURLcode res;
+		long status = 0;
+
+		if (!curl) {
+			free(payload);
+			return NULL;
+		}
+
+		headers = curl_slist_append(headers, auth);
+
+		curl_easy_setopt(curl, CURLOPT_URL, url);
+		curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+		curl_easy_setopt(curl, CURLOPT_POSTFIELDS, payload);
+		curl_easy_setopt(curl, CURLOPT_TIMEOUT_MS, 20000L);
+		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_cb);
+		curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *) &response);
+
+		res = curl_easy_perform(curl);
+		curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &status);
+
+		curl_slist_free_all(headers);
+		curl_easy_cleanup(curl);
+
+		if (res == CURLE_OK && status >= 200 && status < 300) {
+			char *response_text = response.data ? response.data : NULL;
+			char *content = response_text ? extract_content_json(response_text) : NULL;
+			char *json = content ? extract_json_object(content) : NULL;
+
+			free(response.data);
+			free(payload);
+			free(content);
+			if (json) {
+				return json;
+			}
+			return NULL;
+		}
+
+		log_error("Gemini call failed attempt=%d status=%ld", attempt + 1, status);
+		free(response.data);
+	}
+
+	free(payload);
+	return NULL;
 }

@@ -12,6 +12,9 @@ typedef struct AppConfig {
 	const char *openai_model;
 	const char *supabase_url;
 	const char *supabase_key;
+	const char *ai_provider;
+	const char *gemini_api_key;
+	const char *gemini_model;
 	int request_timeout_ms;
 	int openai_max_retries;
 } AppConfig;

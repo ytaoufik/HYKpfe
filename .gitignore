@@ -13,12 +13,16 @@ backend/*.o
 backend/**/*.o
 backend/hyk_backend
 backend/hyk_tests
+backend/*.exe
 backend/*.gcno
 backend/*.gcda
 backend/**/*.gcno
 backend/**/*.gcda
 backend/hyk.db
+backend/hyk.db-shm
+backend/hyk.db-wal
 backend/test.db
+hyk.db
 
 # Env files
 .env
