@@ -1,6 +1,6 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -Wpedantic -std=c11 -D_POSIX_C_SOURCE=200809L -D_DEFAULT_SOURCE -I./include -I./third_party
-LDFLAGS = -lsqlite3 -lcurl -lm -lws2_32
+LDFLAGS = -lsqlite3 -lcurl -lm
 
 SRC = \
 	main.c \
